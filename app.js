@@ -5,7 +5,8 @@ var path       = require('path');
 var XLSX       = require('xlsx');
 var multer     = require('multer');
 var userModel=require('./models/userModel')
-
+var each = require('async-each-series');
+var async=require('async')
 //multer
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -56,13 +57,23 @@ app.post('/',upload.single('excel'),(req,res)=>{
   var x=0;
   sheet_namelist.forEach(element => {
       var xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_namelist[x]]);
-      userModel.insertMany(xlData,(err,data)=>{
-          if(err){
-              console.log(err);
-          }else{
-              console.log(data);
-          }
+
+      each(xlData,function(data,next){
+        setTimeout(function () {
+            userModel.find({email:data.email})
+            .then(res=>{
+                    console.log(res);
+                    if(res.length==0)
+                    {
+                        userModel.create(data);
+                    }
+                })
+            console.log('Hello');
+            next();
+          },1000);
       })
+    
+   
       x++;
   });
   res.redirect('/');
